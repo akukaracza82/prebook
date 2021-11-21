@@ -6,7 +6,7 @@ describe('Prebooks app', function() {
   it('should find jobs', function() {
     browser.get('https://www.addleedrivers.co.uk/drp/driver/sign-in');
     browser.driver.findElement(by.css('[placeholder = "PL Number"]')).sendKeys('12357');
-    browser.driver.findElement(by.css('[placeholder = "Password"]')).sendKeys('Password1');
+    browser.driver.findElement(by.css('[placeholder = "Password"]')).sendKeys('');
     browser.driver.findElement(by.css('[type = "submit"]')).click();
     const execSync = require('child_process').execSync;
     browser.sleep(3000)
