@@ -10,6 +10,7 @@ describe('Prebooks app', function() {
     browser.driver.findElement(by.css('[placeholder = "PL Number"]')).sendKeys('27489');
     browser.sleep(1000)
     browser.driver.findElement(by.css('[placeholder = "Password"]')).sendKeys('Tinusia11');
+    browser.sleep(1000)
     browser.driver.findElement(by.css('[type = "submit"]')).click();
     const execSync = require('child_process').execSync;
     browser.sleep(1000)
@@ -20,11 +21,11 @@ describe('Prebooks app', function() {
     ' ME14 ', ' ME15 ',' ME16 ',' ME17 ',' ME18 ',' ME19 ',' ME20 ',' CT1 ',  
     ' CT2 ',  ' CT3 ', ' CT4 ', ' CT21 ', ' RH7 ', ' RH19 ', ' RH1 ', ' RH2 ', ' RH6 ', ' BN8 ', ' TN16 ']
     
-    // browser.sleep(30000)
-    // setInterval(timer, 30000)
+    browser.sleep(30000)
+    setInterval(timer, Math.random() * 30000)
    
     
-    // function timer() {
+    function timer() {
       browser.get('https://www.addleedrivers.co.uk/drp/driver/prebook')
       browser.sleep(1000)
       browser.getPageSource().then(function(pageSource){
@@ -45,20 +46,18 @@ describe('Prebooks app', function() {
                   // browser.actions().mouseDown(eldo).mouseMove({x: 500, y: 0}).click().perform()
                     function fillBooking() {
                     booking.push(pickup.slice(0, -2).trim()) && booking.push(dropoff.slice(0, -2).trim())
-                    getCoords(booking[0], booking[1]).then(measureDistance).then(result => console.log(result) && (result/1600) > 10 && execSync(`espeak "${booking[0]} to ${booking[1]} ${Math.round(result/1600)} miles"`)  )
+                    getCoords(booking[0], booking[1]).then(measureDistance).then(result => console.log(result) && (result/1600) > 30 && execSync(`espeak "${booking[0]} to ${booking[1]} ${Math.round(result/1600)} miles"`)  )
                   }
                   fillBooking()
-                  // execSync(`espeak "found something"`)
                   browser.sleep(2000)
                 }
               })
             })
           } 
         }
-    browser.sleep(18000)
-    browser.sleep(Math.random() * 90000)
+    browser.sleep(22000)
       })
-    // }
+    }
   })
   function measureDistance(data) {
     const https = require('https')
