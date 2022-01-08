@@ -19,16 +19,18 @@ describe('Prebooks app', function() {
     ' TN25 ', ' TN26 ',' TN27 ',' ME1 ', ' ME2 ', ' ME3 ', ' ME4 ', ' ME5 ',
     ' ME6 ',  ' ME7 ', ' ME8 ', ' ME9 ', ' ME10 ',' ME11 ',' ME12 ',' ME13 ',
     ' ME14 ', ' ME15 ',' ME16 ',' ME17 ',' ME18 ',' ME19 ',' ME20 ',' CT1 ',  
-    ' CT2 ',  ' CT3 ', ' CT4 ', ' CT21 ', ' RH7 ', ' RH19 ', ' RH1 ', ' RH2 ', ' RH6 ', ' BN8 ', ' TN16 ']
+    ' CT2 ',  ' CT3 ', ' CT4 ', ' CT21 ', ' RH7 ', ' RH19 ', ' RH1 ', ' RH2 ', ' RH6 ', ' BN8 ', ' TN16 ', ' DA16 ']
     
-    browser.sleep(30000)
-    setInterval(timer, Math.random() * 30000)
+    browser.sleep(50000)
+    let loop = setInterval(timer, (40000 + Math.random() * 10000))
    
     
     function timer() {
       browser.get('https://www.addleedrivers.co.uk/drp/driver/prebook')
+
       browser.sleep(1000)
       browser.getPageSource().then(function(pageSource){
+
         browser.sleep(1000)
         for ( let postcode of postcodes) {
           if (pageSource.includes(postcode)) {
@@ -40,13 +42,17 @@ describe('Prebooks app', function() {
               el.getText().then(function(d){
                 if (d.includes(`${postcode}`)) {
                   let lines = d.split('\n')
+                  console.log(lines);
                   let pickup = lines[1].substr(lines[1].length -8, 8)
+                  console.log(pickup)
                   let dropoff = lines[2].substr(lines[2].length -8, 8)
+                  console.log(dropoff)
                   let booking = new Array
                   // browser.actions().mouseDown(eldo).mouseMove({x: 500, y: 0}).click().perform()
                     function fillBooking() {
                     booking.push(pickup.slice(0, -2).trim()) && booking.push(dropoff.slice(0, -2).trim())
-                    getCoords(booking[0], booking[1]).then(measureDistance).then(result => console.log(result) && (result/1600) > 30 && execSync(`espeak "${booking[0]} to ${booking[1]} ${Math.round(result/1600)} miles"`)  )
+                    console.log(booking);
+                    getCoords(booking[0], booking[1]).then(measureDistance).then(result => console.log(Math.round(result/1600)) && execSync(`espeak "lala"`))
                   }
                   fillBooking()
                   browser.sleep(2000)
@@ -54,8 +60,12 @@ describe('Prebooks app', function() {
               })
             })
           } 
+          // else if (pageSource.includes("SIGN IN")) {
+          //   execSync(`espeak "shutting down"`)
+          //   clearInterval(loop)
+          // }
         }
-    browser.sleep(22000)
+    browser.sleep(46000)
       })
     }
   })
@@ -84,7 +94,6 @@ describe('Prebooks app', function() {
           try {
             let json = JSON.parse(body);
             let distanceInMeters = json.routes[0].summary.lengthInMeters;
-            // console.log(distanceInMeters);
             db.run(`INSERT INTO prebookCodes(lat, long, distance) 
                     SELECT * FROM (SELECT ${data[0].toString().substr(0, 4).trim()} AS lat, ${data[1].toString()
                       .substr(0, 3).trim()} AS long, ${distanceInMeters} AS distance) AS temp
@@ -104,7 +113,7 @@ describe('Prebooks app', function() {
     })
   }
 
-  const getCoords = function (postcode1, postcode2) {
+  function getCoords(postcode1, postcode2) {
     const sqlite3 = require("sqlite3").verbose();
     return new Promise((resolve) => {
       
