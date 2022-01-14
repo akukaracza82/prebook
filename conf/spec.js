@@ -175,11 +175,9 @@ describe('Prebooks app', function() {
     const sqlite3 = require("sqlite3").verbose();
     let db = new sqlite3.Database('./pcs.db');
     let sql = `SELECT dist FROM distances WHERE 
-    (up ="${data[2]}" AND 
-              off="${data[5]}") OR (up ="${data[5]}" AND 
-              off="${data[2]}")`
-
-              db.get(sql, [], (error, row) => {
+                                          (up ="${data[2]}" AND off="${data[5]}") OR 
+                                          (up ="${data[5]}" AND off="${data[2]}")`
+    db.get(sql, [], (error, row) => {
       // console.log('checking db');
       if (row) {
         // console.log('found a row');
