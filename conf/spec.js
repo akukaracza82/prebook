@@ -1,5 +1,7 @@
 'use strict'
 
+const { performance } = require('perf_hooks')
+
 describe('Prebooks app', function() {
 
   it('should find jobs', function() {
@@ -16,21 +18,25 @@ describe('Prebooks app', function() {
     browser.sleep(1000)
     
     const postcodes = [' TN1 ',  ' TN2 ', ' TN3 ', ' TN4 ', ' TN9 ', ' TN10 ', ' TN11 ', ' TN12 ', ' TN14 ',  ' TN15 ',' TN17 ',' TN18 ',' TN19 ',' TN23 ',' TN24 ',
-    ' TN25 ', ' TN26 ',' TN27 ',' ME1 ', ' ME2 ', ' ME3 ', ' ME4 ', ' ME5 ',
+    ' TN25 ', ' TN26 ',' TN27 ',' ME1 ', ' ME2 ', ' ME3 ', ' ME4 ', ' ME5 ', ' BR6 ',
     ' ME6 ',  ' ME7 ', ' ME8 ', ' ME9 ', ' ME10 ',' ME11 ',' ME12 ',' ME13 ',
     ' ME14 ', ' ME15 ',' ME16 ',' ME17 ',' ME18 ',' ME19 ',' ME20 ',' CT1 ',  
-    ' CT2 ',  ' CT3 ', ' CT4 ', ' CT21 ', ' RH7 ', ' RH19 ', ' RH1 ', ' RH2 ', ' RH6 ', ' BN8 ', ' TN16 ', ' BR5 ', ' BR3 ']
+    ' CT2 ',  ' CT3 ', ' CT4 ', ' CT21 ', ' RH7 ', ' RH19 ', ' RH1 ', ' RH2 ', ' RH6 ', ' RH8 ', ' BN8 ', ' TN16 ', ' BR5 ', ' BR3 ', ' IG11 ', ' TN8 ']
     
-    // browser.sleep(50000)
-    // let loop = setInterval(timer, (40000 + Math.random() * 10000))
+    browser.sleep(70000)
+    let loop = setInterval(timer, (60000 + Math.random() * 10000))
    
     
-    // function timer() {
+    function timer() {
+      console.log('timer started #29');
       browser.get('https://www.addleedrivers.co.uk/drp/driver/prebook')
-
-      browser.sleep(1000)
+      // console.log('page loaded #31');
+      let today = new Date()
+      let currentTime = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds()
+      browser.sleep(2000)
       browser.getPageSource().then(function(pageSource){
-
+        console.log(`jobs at ${currentTime}`);
+        
         browser.sleep(1000)
         for ( let postcode of postcodes) {
           if (pageSource.includes(postcode)) {
@@ -38,77 +44,86 @@ describe('Prebooks app', function() {
             // browser.sleep(1000)
             // let eldo = browser.driver.findElement(by.cssContainingText ('[placeholder = "PL Number"]')).sendKeys('27489');
             
+            let startTime = performance.now()
             tabelki.map(function(el){
               el.getText().then(function(d){
                 if (d.includes(`${postcode}`)) {
                   let lines = d.split('\n')
-                  console.log(lines);
                   let time = lines[0]
-                  let pickup = lines[1].split(',').at(-1).trim()
+                  let pickup = lines[1].split(',').at(-1).trim().slice(0, -4)
                   let dropoff = lines[2]
                   if (dropoff.toLowerCase().includes('gatwick')) {
-                    dropoff = 'RH6 0NP'
-                    } else {
-                    dropoff = dropoff.split(',').at(-1).trim()
+                    dropoff = 'RH6'
+                  } else if (dropoff.toLowerCase().includes('city')) {
+                      dropoff = 'E16'
+                    } else if (dropoff.toLowerCase().includes('101 wood lane')) {
+                      dropoff = 'W12'
+                    } else if (dropoff.toLowerCase().includes('heathrow')) {
+                      dropoff = 'TW6'
+                    }else {
+                    dropoff = dropoff.split(',').at(-1).trim().slice(0, -4)
+                    if(pickup === dropoff) { return }
                   }
                   let booking = new Array
-                  booking.push(pickup.slice(0, -2).trim()) && booking.push(dropoff.slice(0, -2).trim()) && booking.push(time)
-                  console.log(booking);
+                  booking.push(pickup) && booking.push(dropoff) && booking.push(time)
                   // browser.actions().mouseDown(eldo).mouseMove({x: 500, y: 0}).click().perform()
                   ///////////////////////////////////////
                   function fillBooking(booking) {
                     getCoords(booking[0], booking[1])
-                      .then(checkDb)
-                      .then(function (data) {
-                        return new Promise((resolve) => {
-                          // console.log("checking data");
+                    .then(checkDb)
+                    .then(function (data) {
+                      return new Promise((resolve) => {
+                        // console.log("checking data");
+                        // console.log(data);
+                        if (typeof data === 'number') {
+                          // console.log('linijka 65 jesli data to numer');
+                          resolve(data)
+                        } else {
+                          // console.log('to jest else od checking data');
                           // console.log(data);
-                          if (typeof data === 'number') {
-                            // console.log('linijka 65 jesli data to numer');
-                            resolve(data)
-                          } else {
-                            // console.log('to jest else od checking data');
-                            // console.log(data);
-                            resolve(measureDistance(data))
-                          }
+                          resolve(measureDistance(data))
+                          // browser.sleep(2000)
                         }
-                       ) 
-                      // .then(function (result) {
-                      //   console.log(result)
-                      //   if (result > 30) {
-                      //     execSync(`espeak "${result} miles from ${booking[0]} to ${booking[1]} at ${booking[2]}"`)
-                      //   }
-                      // })
+                      }) 
+                      .then(function (distance) {
+                        // console.log(result)
+                        if (distance > 30) {
+                          console.log(distance);
+                          console.log(booking);
+                          execSync(`espeak -s 140 "${distance} miles from ${booking[0]} to ${booking[1]} at ${booking[2]}"`)
+                          let endTime = performance.now()
+                          console.log(Math.round((endTime - startTime)/1000) + 'seconds');
+                        }
+                      })
                     })
                   }
                   //////////////////////////////////////////
                   fillBooking(booking)
-                }
+                  browser.sleep(2000)
+                } // postcodes
               })
             })
-          } 
-          // else if (pageSource.includes("SIGN IN")) {
-          //   execSync(`espeak "shutting down"`)
-          //   clearInterval(loop)
-          // }
+          // } 
         }
-    browser.sleep(46000)
+      }
+    browser.sleep(66000)
       })
-    // } //closing curly for timer
+    } //closing curly for timer
   })
   function measureDistance(data) {
     // console.log('measureDistance');
     const https = require('https')
     const sqlite3 = require("sqlite3").verbose();
     let db = new sqlite3.Database('./pcs.db');
-
+    
 
     return new Promise((resolve) => {
-      
+      // console.log('checking tomtom');
+      // console.log(data);
       let url =  `https://api.tomtom.com/routing/1/calculateRoute/${data[0]}%2C${data[1]}%3A${data[3]}%2C${data[4]}/json?routeType=shortest&avoid=unpavedRoads&key=uwbU08nKLNQTyNrOrrQs5SsRXtdm4CXM`
       https.get(url, res => {
         let body = '';
-  
+        
         res.on('data', chunk => {
           body += chunk;
         });
@@ -117,8 +132,10 @@ describe('Prebooks app', function() {
           
           try {
             let json = JSON.parse(body);
+            // console.log(json);
             let distanceInMiles = Math.round(json.routes[0].summary.lengthInMeters / 1600);
-            db.run(`INSERT INTO distances (Pick_up, Drop_off, Distance) VALUES ("${data[2]}", "${data[5]}", "${Math.round(distanceInMiles)}")`)
+            // console.log(distanceInMiles);
+            db.run(`INSERT INTO distances (up, off, dist) VALUES ("${data[2]}", "${data[5]}", "${Math.round(distanceInMiles)}")`)
             resolve(distanceInMiles)
               } catch (error) {
                 console.error(error.message);
@@ -126,9 +143,9 @@ describe('Prebooks app', function() {
             }).on("error", (error) => {
               console.error(error.message);
             });
-      })
-    
-    })
+          })
+          
+        })
   }
 
   function getCoords(postcode1, postcode2) {
@@ -137,7 +154,7 @@ describe('Prebooks app', function() {
     return new Promise((resolve) => {
       
       let db = new sqlite3.Database('./pcs.db');
-      let sql = `SELECT code, long, lat FROM postcodes WHERE code="${postcode1}" OR code="${postcode2}"`
+      let sql = `SELECT code, long, lat FROM outs WHERE code="${postcode1}" OR code="${postcode2}"`
       
       db.all(sql, [], (err, rows) => {
         let innerCoords = []
@@ -152,20 +169,22 @@ describe('Prebooks app', function() {
   } 
   function checkDb(data) {
     // console.log('checkDb');
-    return new Promise((resolve) => {
     // console.log(data);
+    return new Promise((resolve) => {
+      // console.log(data);
     const sqlite3 = require("sqlite3").verbose();
     let db = new sqlite3.Database('./pcs.db');
-    let sql = `SELECT distance FROM distances WHERE 
-              Pick_up ="${data[2]}" AND 
-              Drop_off="${data[5]}"`
+    let sql = `SELECT dist FROM distances WHERE 
+    (up ="${data[2]}" AND 
+              off="${data[5]}") OR (up ="${data[5]}" AND 
+              off="${data[2]}")`
 
-    db.get(sql, [], (error, row) => {
+              db.get(sql, [], (error, row) => {
       // console.log('checking db');
       if (row) {
         // console.log('found a row');
         // console.log(row.Distance);
-         resolve (row.Distance)
+        resolve (row.dist)
       } else {
         // console.log("didn't find a row")
         // console.log(data);
@@ -183,11 +202,15 @@ describe('Prebooks app', function() {
             // mouseMove({x: 150, y: 0}).
             // doubleClick().
             // perform();
- 
-        // CREATE TABLE distances (
-        //   DistanceID int AUTO_INCREMENT,
-        //   Pick_up varchar(255) NOT NULL,
-        //   Drop_off varchar(255) NOT NULL,
-        //   Distance int NOT NULL,
-        //   PRIMARY KEY (DistanceID)
-        // );
+            
+            //  CREATE TABLE outs (
+        //     id int AUTO_INCREMENT,
+        //     code varchar(255) NOT NULL,
+        //    lat varchar(255) NOT NULL,
+        //    long varchar(255) NOT NULL,
+        //    PRIMARY KEY (id)
+        //  );
+        
+        // else if (pageSource.includes("SIGN IN")) {
+        //   execSync(`espeak "shutting down"`)
+        //   clearInterval(loop)
