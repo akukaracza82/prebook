@@ -39,23 +39,38 @@ describe('Prebooks app', function() {
     browser.sleep(1000)
     browser.driver.findElement(by.css('[type = "submit"]')).click();
     const execSync = require('child_process').execSync;
+    browser.sleep(1000)
     
-    browser.sleep(70000)
-    let loop = setInterval(timer, (60000 + Math.random() * 10000))
-       
-    function timer() {
+    // const postcodes = [' TN1 ',  ' TN2 ', ' TN3 ', ' TN4 ', ' TN9 ', ' TN10 ',
+    //   ' TN11 ', ' TN12 ', ' TN14 ', ' TN15 ',' TN17 ',' TN18 ',' TN19 ',
+    //   ' TN23 ',' TN24 ',' TN25 ', ' TN26 ',' TN27 ',' ME1 ', ' ME2 ', ' ME3 ',
+    //   ' ME4 ', ' ME5 ', ' BR6 ', ' ME6 ',  ' ME7 ', ' ME8 ', ' ME9 ', ' ME10 ',
+    //   ' ME11 ',' ME12 ',' ME13 ', ' ME14 ', ' ME15 ',' ME16 ',' ME17 ',' ME18 ',
+    //   ' ME19 ',' ME20 ',' CT1 ', ' CT2 ',  ' CT3 ', ' CT4 ', ' CT21 ', ' RH7 ',
+    //   ' RH19 ', ' RH1 ', ' RH2 ', ' RH6 ', ' RH8 ', ' BN8 ', ' TN16 ', ' BR5 ',
+    //   ' BR3 ', ' IG11 ', ' TN8 ', ' EC4M ']
+    
+
+    // browser.sleep(70000)
+    // let loop = setInterval(timer, (60000 + Math.random() * 10000))
+   
+    
+    // function timer() {
       browser.get('https://www.addleedrivers.co.uk/drp/driver/prebook')
       let today = new Date()
       let currentTime = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds()
       browser.sleep(2000)
       browser.getPageSource().then(function(pageSource){
-      console.log(`jobs at ${currentTime}`);
+        console.log(`jobs at ${currentTime}`);
         
-        browser.sleep(10)
+        browser.sleep(100)
+        // if (checkIfAnyJobsExist(pageSource, postcodes)) {
           let tabelki = browser.element.all(by.css('.table__tbody'))
           let startTime = performance.now()
           tabelki.map(function(el){
             el.getText().then(function(d){
+              // for ( let postcode of postcodes) {
+                // if (d.includes(`${postcode}`)) {
                   let lines = d.split('\n')
                   let time = lines[0]
                   let serviceType = lines[4] === '6 SEATER' ? 'MPV' : 'STANDARD'
@@ -70,17 +85,21 @@ describe('Prebooks app', function() {
                     .then(checkDb)
                     .then(function (data) {
                       return new Promise((resolve) => {
-                      
+                        // console.log("checking data");
+                        // console.log(data);
                         if (typeof data === 'number') {
+                          // console.log('linijka 65 jesli data to numer');
                           resolve(data)
                         } else {
-                         resolve(measureDistance(data))
+                          // console.log('to jest else od checking data');
+                          // console.log(data);
+                          resolve(measureDistance(data))
+                          // browser.sleep(2000)
                         }
                       }) 
                       .then(function (distance) {
                         // console.log(result)
-                        if (distance > 25) {
-                          console.log(lines[1], lines[2]);
+                        if (distance > 5) {
                           console.log(booking, distance + ' miles');
                           // execSync(`espeak -s 140 "${distance} miles from ${booking[0]} to ${booking[1]} at ${booking[2]}"`)
                           let endTime = performance.now()
@@ -91,15 +110,15 @@ describe('Prebooks app', function() {
                   }
                   fillBooking(booking)
                   browser.sleep(100)
-                  // } // postcodes
-                  // }//for
-                })
-              })
-              // } 
+                // } // postcodes
+              // }//for
+            })
+          })
+     // } 
       // } // checkifExist
     browser.sleep(66000)
   })
-  } //closing curly for timer
+  // } //closing curly for timer
   })
   
   function checkIfAnyJobsExist(sourceCode, postcodes) {
@@ -107,12 +126,11 @@ describe('Prebooks app', function() {
   }
   
   function extractPostcode(line) {
-    const match = Object.keys(kody).find(key => String(line).toLowerCase().includes(key))
-    if (match) {
+    if (Object.keys(kody).some(key => String(line).toLowerCase().includes(key))) {
+      const kodzik = Object.keys(kody).filter(kod => line.toLowerCase().includes(kod))
       return kody[kodzik].toUpperCase()
     } else {
-      let code = line.split(',').at(-1).trim()
-      return ( code.length > 3 ) ? code.slice(0, -4) : code
+      return line.split(',').at(-1).trim().slice(0, -4)
     }
   }
 
@@ -200,3 +218,25 @@ describe('Prebooks app', function() {
   })
 }
 })
+
+// browser.actions().doubleClick(element(job)).doubleClick().perform()
+// browser.actions().
+// doubleClick(element(by.cssContainingText('.prebook__address', `${postcode}`))).perform
+// mouseMove({x: 150, y: 0}).
+// doubleClick().
+// perform();
+
+//  CREATE TABLE outs (
+  //     id int AUTO_INCREMENT,
+  //     code varchar(255) NOT NULL,
+  //    lat varchar(255) NOT NULL,
+  //    long varchar(255) NOT NULL,
+  //    PRIMARY KEY (id)
+  //  );
+  
+        // else if (pageSource.includes("SIGN IN")) {
+          //   execSync(`espeak "shutting down"`)
+          //   clearInterval(loop)
+          // browser.sleep(1000)
+          // let eldo = browser.driver.findElement(by.cssContainingText ('[placeholder = "PL Number"]')).sendKeys('27489');
+          // browser.actions().mouseDown(eldo).mouseMove({x: 500, y: 0}).click().perform()
