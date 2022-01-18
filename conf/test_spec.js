@@ -61,6 +61,7 @@ describe('Prebooks app', function() {
                   let lines = d.split('\n')
                   let pickup = lines[1]
                     if (Object.keys(kody).some((key) => pickup.toLowerCase().includes(key))) {
+<<<<<<< Updated upstream
                       Object.keys(kody).map(function(kod) {
                         if(lines[1].includes(kod)) {
                           pickup = kody[kod]
@@ -76,6 +77,17 @@ describe('Prebooks app', function() {
                         if(lines[2].includes(kod)) {
                           dropoff = kody[kod]
                         } else {
+=======
+                      pickup = Object.values(kody)
+                    } else {
+                      pickup = lines[1].split(',').at(-1).trim().slice(0, -4)
+                    } 
+
+                    let dropoff = lines[2]
+                    if (Object.keys(kody).some((key) => dropoff.toLowerCase().includes(key) && console.log(key.constructor))) {
+                      dropoff = Object.values(kody)
+                    } else {
+>>>>>>> Stashed changes
                       dropoff = lines[1].split(',').at(-1).trim().slice(0, -4)
                     } 
                     if(pickup === dropoff) { return }
@@ -211,6 +223,7 @@ describe('Prebooks app', function() {
   })
 }
 })
+<<<<<<< Updated upstream
 
 function extractPostcodes(line) { 
   if (Object.keys(kody).some((key) => line.toLowerCase().includes(key))) {
@@ -241,3 +254,5 @@ function extractPostcodes(line) {
   }
   } 
 // }
+=======
+>>>>>>> Stashed changes
