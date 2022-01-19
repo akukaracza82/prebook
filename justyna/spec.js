@@ -25,6 +25,9 @@ describe('Prebooks app', function() {
     }
   }
 
+  const londonPostcodes = ['SE', 'CR', 'BR']
+  const bannedPostcodes = ['CM', 'IG', 'RM']
+
   const current_user = accounts.justyna
 
   it('should find jobs', function() {
@@ -49,23 +52,30 @@ describe('Prebooks app', function() {
     // browser.sleep(2000)
     browser.getPageSource().then(function(pageSource){
       let tabelki = browser.element.all(by.css('.table__tbody'))
+      let rowCount = 0
+      let identicalJobCount = 0
+      tabelki.count().then(result => rowCount = result)
+      // document.querySelectorAll('#main-div .table__tbody').length
+      let jobs = []
       let bestJob = []
       let startTime = performance.now()
 
       tabelki.map(function(el){
-        console.log(tabelki.length);
+        
         el.getText().then(function(d){
           let booking = {}
           let lines = d.split('\n')
           booking.time = lines[0]
-          booking.serviceType = lines[4] === '6 SEATER' ? 'MPV' : 'STANDARD'
-          booking.pickup = extractPostcode(lines[1])
-          booking.dropoff = extractPostcode(lines[2])
-          if ( booking.pickup === booking.dropoff ) { return }
-              
+          booking.Type = lines[4] === '6 SEATER' ? 'MPV' : 'ST'
+          booking.pick = extractPostcode(lines[1])
+          booking.drop = extractPostcode(lines[2])
+          // console.log(`identical job count ${identicalJobCount}`);
+          
+          jobs.push(booking)
+          if ( booking.pick === booking.drop ) { return }
           console.log(booking);
           function fillBooking(booking) {
-            getCoords(booking.pickup, booking.dropoff)
+            getCoords(booking.pick, booking.drop)
             .then(checkDb)
             .then(function (data) {
               return new Promise((resolve) => {
@@ -76,16 +86,21 @@ describe('Prebooks app', function() {
                 }
               }) 
               .then(function (distance) {
-                if (distance > 30) {
-                  booking.distance = parseInt(distance + ' miles')
+                // return new Promise((resolve) => {
+                console.log(jobs.length + 'jobs');
+                console.log(rowCount);
+                if (distance > 3) {
+                  booking.dist = parseInt(distance + ' miles')
                   updateBestJob(bestJob, booking)
                   console.log(booking);
                   // execSync(`espeak -s 140 "${distance} miles from ${booking[0]} to ${booking[1]} at ${booking[2]}"`)
                   let endTime = performance.now()
                   console.log(Math.round(endTime - startTime) + 'ms');
                   console.log(bestJob);
+                  // jobs.length > 40 ? console.log(jobs) : console.log();
                   browser.sleep(1000)
                 }
+              // })
               })
             })
           }
@@ -187,3 +202,18 @@ describe('Prebooks app', function() {
 // function checkIfAnyJobsExist(sourceCode, postcodes) {
 //   return postcodes.some(postcode => sourceCode.includes(postcode))
 // }
+
+function pickAJob(bestJobs) {
+  let picksUpFromLondon = function(job) {
+    londonPostcodes.some(code => job.pick.substr(0, 2).include(code))
+  }
+  bestJobs.map(function(job) {  
+    if (
+      ( job[0] && !picksUpFromLondon(job[0])) ||     
+      ( job[0].distance > 60 && job[0].distance >= 1.3*job[1].distance && picksUpFromLondon(job[0]))
+      ) { return job[0]}
+    else if ( job[0].distance < 1.3*job[1] && picksUpFromLondon(job[0]) && !picksUpFromLondon(job[1])) { 
+      return job[1] 
+    }
+  }) 
+}
