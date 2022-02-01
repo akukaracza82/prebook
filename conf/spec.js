@@ -7,7 +7,9 @@ describe('Prebooks app', function() {
   const kody = {
     heathrow: 'tw6',
     gatwick: 'rh6',
-    'city airport': 'e16'
+    'city airport': 'e16',
+    'STANSTED, MAIN TERM': 'CM24',
+    'luton, main term': 'lu1'
   }
 
   const accounts = {
@@ -25,7 +27,7 @@ describe('Prebooks app', function() {
     }
   }
 
-  const current_user = accounts.justyna
+  const current_user = accounts.artur
 
   it('should find jobs', function() {
     browser.ignoreSynchronization=true
@@ -41,6 +43,7 @@ describe('Prebooks app', function() {
     const execSync = require('child_process').execSync;
     browser.wait(EC.presenceOf($('.desktop')), 5000)
     browser.sleep(1000)
+    
     browser.get('https://www.addleedrivers.co.uk/drp/driver/prebook')
     browser.wait(EC.presenceOf($('.table__tbody')), 30000)
     let today = new Date()
@@ -48,13 +51,7 @@ describe('Prebooks app', function() {
     // browser.sleep(2000)
     browser.getPageSource().then(function(pageSource){
       let tabelki = browser.element.all(by.css('.table__tbody'))
-      let bestJob = { 
-        pickup: 'E14',
-        dropoff: 'ME15',
-        time: '17:40',
-        serviceType: 'MPV',
-        distance: 28 
-      }
+      let bestJob = []
       let startTime = performance.now()
 
       tabelki.map(function(el){
@@ -62,10 +59,10 @@ describe('Prebooks app', function() {
           let booking = {}
           let lines = d.split('\n')
           booking.time = lines[0]
-          booking.serviceType = lines[4] === '6 SEATER' ? 'MPV' : 'STANDARD'
+          booking.serviceType = lines[4] === '6 SEATER' ? 'MPV' : 'ST'
           booking.pickup = extractPostcode(lines[1])
           booking.dropoff = extractPostcode(lines[2])
-          if(booking.pickup === booking.dropoff) { return }
+          if ( booking.pickup === booking.dropoff ) { return }
               
           console.log(booking);
           function fillBooking(booking) {
@@ -82,7 +79,7 @@ describe('Prebooks app', function() {
               .then(function (distance) {
                 if (distance > 1) {
                   booking.distance = parseInt(distance + ' miles')
-                  parseInt(bestJob.distance) > parseInt(booking.distance) ? bestJob : bestJob = booking
+                  updateBestJob(bestJob, booking)
                   console.log(booking);
                   // execSync(`espeak -s 140 "${distance} miles from ${booking[0]} to ${booking[1]} at ${booking[2]}"`)
                   let endTime = performance.now()
@@ -175,6 +172,16 @@ describe('Prebooks app', function() {
       })
       db.close()
     })
+  }
+
+  function updateBestJob(best, job) {
+    if ( best.length < 3 ) {
+      best.push(job)
+    } else {
+      best.sort((a, b) => (parseInt(a.distance) > parseInt(b.distance)) ? -1 : 1 )
+      parseInt(job.distance) < parseInt(best[2].distance) ? best[2] : (best[2] = job )
+      best.sort((a, b) => (parseInt(a.distance) > parseInt(b.distance)) ? -1 : 1 )
+    }
   }
 })
 

@@ -3,6 +3,24 @@
 const { performance } = require('perf_hooks')
 
 describe('Prebooks app', function() {
+
+
+  function getName()
+  {
+    // return new Promise ((resolve) => {
+      let  a = browser.executeScript("prompt('whats your name')")
+      browser.sleep(5000)
+      return a
+    // })
+  }
+
+  console.log(getName())
+  // browser.executeScript("prompt('select time of job')").then(response => console.log(response))
+  // browser.sleep(5000)
+  // let response = browser.executeScript("var win = this.browserbot.getUserWindow(); return win.promptResponse")
+  // browser.sleep(5000)
+  // console.log(response);
+  
   
   const kody = {
     heathrow: 'tw6',
@@ -10,7 +28,7 @@ describe('Prebooks app', function() {
     'city airport': 'e16',
     '101 wood lane': 'w12',
   }
-
+  
   const accounts = {
     artur: {
       login: '12357',
@@ -25,82 +43,110 @@ describe('Prebooks app', function() {
       password: 'Tinusia11'
     }
   }
-
-  const current_user = accounts.justyna
-
+  
+  const current_user = accounts.artur
+  
   it('should find jobs', function() {
     browser.ignoreSynchronization=true
-    browser.sleep(1000)
+    const EC = protractor.ExpectedConditions;
     browser.get('https://www.addleedrivers.co.uk/drp/driver/sign-in');
-    browser.sleep(1000)
-    browser.driver.findElement(by.css('[placeholder = "PL Number"]')).sendKeys(current_user.login);
-    browser.sleep(1000)
-    browser.driver.findElement(by.css('[placeholder = "Password"]')).sendKeys(current_user.password);
-    browser.sleep(1000)
-    browser.driver.findElement(by.css('[type = "submit"]')).click();
+    browser.wait(EC.presenceOf($('[placeholder = "PL Number"]')), 5000)
+    browser.sleep(500)
+    element(by.css('[placeholder = "PL Number"]')).sendKeys(current_user.login);
+    browser.sleep(100)
+    element(by.css('[placeholder = "Password"]')).sendKeys(current_user.password);
+    browser.sleep(100)
+    element(by.css('[type = "submit"]')).click();
     const execSync = require('child_process').execSync;
     
-    browser.sleep(70000)
-    let loop = setInterval(timer, (60000 + Math.random() * 10000))
+    browser.sleep(25000)
+    let loop = setInterval(timer, (15000 + Math.random() * 10000))
        
     function timer() {
-      browser.get('https://www.addleedrivers.co.uk/drp/driver/prebook')
-      let today = new Date()
-      let currentTime = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds()
-      browser.sleep(2000)
-      browser.getPageSource().then(function(pageSource){
-      console.log(`jobs at ${currentTime}`);
-        
-        browser.sleep(10)
-          let tabelki = browser.element.all(by.css('.table__tbody'))
-          let startTime = performance.now()
-          tabelki.map(function(el){
-            el.getText().then(function(d){
-                  let lines = d.split('\n')
-                  let time = lines[0]
-                  let serviceType = lines[4] === '6 SEATER' ? 'MPV' : 'STANDARD'
-                  let pickup = extractPostcode(lines[1])
-                  let dropoff = extractPostcode(lines[2])
-                  if(pickup === dropoff) { return }
+    browser.get('https://www.addleedrivers.co.uk/drp/driver/prebook')
+    let today = new Date()
+    let currentTime = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds()
+    // browser.sleep(2000)
+    console.log(`Jobs at ${currentTime}`);
+    browser.getPageSource().then(function(pageSource){
+      let jobCount = 0
+     browser.wait(EC.presenceOf($('.table__tbody')), 30000)
+    let tabelki = browser.element.all(by.css('.table__tbody'))
+    let rowCount = 0
+    
+    
+    tabelki.count().then(result => rowCount = result)
+      let bestJob = []
+      let startTime = performance.now()
+
+      tabelki.map(function(el){
+        el.getText().then(function(d){
+          jobCount += 1
+          let booking = {}
+          let lines = d.split('\n')
+          let jobsTimeFrame = {}
+          jobsTimeFrame.threeTo4 = job.time < '4:00'
+          jobsTimeFrame.fourTo5 = job.time > '4:00' && job.time < '5:00'
+          jobsTimeFrame.fiveTo530 = job.time > '5:00' && job.time < '5:30'
+          jobsTimeFrame.late = job.time > '7:30'
+          jobsTimeFrame.lateEveniing = job.time > '18:00'
+          let allOtherJobs = lines.filter(job => job.time > '4:00' && job.time < '5:30')
+          booking.time = lines[0]
+          booking.Type = lines[4] === '6 SEATER' ? 'MPV' : 'ST'
+          booking.pick = extractPostcode(lines[1])
+          booking.drop = extractPostcode(lines[2])
+          booking.dist = lines[3] < 100 ? String(Math.round(lines[3])) : String(Math.round(lines[3] / 1600))
+          if ( booking.pick === booking.drop ) 
+          { 
+            emptyBookings += 1
+            return 
+          }
+          // console.log('liczba rzedow ' + rowCount)
+          // console.log('liczba prac ' + jobCount)
+          // console.log('liczba pustych prac ' + emptyBookings);
                   
-                  let booking = new Array
-                  booking.push(pickup, dropoff, time, serviceType)
-                  function fillBooking(booking) {
-                    getCoords(booking[0], booking[1])
-                    .then(checkDb)
-                    .then(function (data) {
-                      return new Promise((resolve) => {
-                      
-                        if (typeof data === 'number') {
-                          resolve(data)
-                        } else {
-                         resolve(measureDistance(data))
-                        }
-                      }) 
-                      .then(function (distance) {
-                        // console.log(result)
-                        if (distance > 25) {
-                          console.log(lines[1], lines[2]);
-                          console.log(booking, distance + ' miles');
-                          // execSync(`espeak -s 140 "${distance} miles from ${booking[0]} to ${booking[1]} at ${booking[2]}"`)
-                          let endTime = performance.now()
-                          console.log(Math.round(endTime - startTime) + 'ms');
-                        }
-                      })
-                    })
-                  }
-                  fillBooking(booking)
-                  browser.sleep(100)
-                  // } // postcodes
-                  // }//for
-                })
+          let endTime = performance.now()
+          console.log(Math.round(endTime - startTime) + 'ms');
+          function fillBooking(booking) {
+            getCoords(booking.pick, booking.drop)
+            .then(checkDb)
+            .then(function (data) {
+              return new Promise((resolve) => {
+                if (typeof data === 'number') {
+                  resolve(data)
+                } else {
+                  resolve(measureDistance(data))
+                }
+              }) 
+              .then(function (distance ) {
+                if (distance > 25) {
+                  booking.d = parseInt(distance + ' miles')
+                  updateBestJob(bestJob, booking)
+                  booking.d > 50 ? ( execSync(`espeak -s 140 "${distance} miles from ${booking.pick} to ${booking.drop} at ${booking.time}"`) ) : booking.d
+                  browser.sleep(1000)
+                }
+                if (jobCount == rowCount ) {
+                  console.log(bestJob)
+                  let found = element(by.cssContainingText('.prebook__address',`${bestJob[0].pick}`))
+                  browser.executeScript('arguments[0].scrollIntoView({ block: "center" })', found.getWebElement())   
+                  browser.actions().mouseMove(found).mouseMove({x: 500, y: 0}).click().perform()
+                  
+                }
               })
-              // } 
+            })
+          }
+          fillBooking(booking)
+          browser.sleep(100)
+          // } // postcodes
+          // }//for
+        })
+      })
+      // } 
       // } // checkifExist
-    browser.sleep(66000)
+    browser.sleep(25000)
   })
   } //closing curly for timer
-  })
+})
   
   function checkIfAnyJobsExist(sourceCode, postcodes) {
     return postcodes.some(postcode => sourceCode.includes(postcode))
@@ -109,7 +155,7 @@ describe('Prebooks app', function() {
   function extractPostcode(line) {
     const match = Object.keys(kody).find(key => String(line).toLowerCase().includes(key))
     if (match) {
-      return kody[kodzik].toUpperCase()
+      return kody[match].toUpperCase()
     } else {
       let code = line.split(',').at(-1).trim()
       return ( code.length > 3 ) ? code.slice(0, -4) : code
@@ -153,7 +199,7 @@ describe('Prebooks app', function() {
       
     })
   }
-
+  
   function getCoords(postcode1, postcode2) {
     // console.log('getCoords');
     const sqlite3 = require("sqlite3").verbose();
@@ -199,4 +245,53 @@ describe('Prebooks app', function() {
     db.close()
   })
 }
+
+function updateBestJob(best, job) {
+  if ( best.length < 3 ) {
+    best.push(job)
+  } else {
+    best.sort((a, b) => (parseInt(a.d) > parseInt(b.d)) ? -1 : 1 )
+    parseInt(job.d) < parseInt(best[2].d) ? best[2] : (best[2] = job )
+    best.sort((a, b) => (parseInt(a.d) > parseInt(b.d)) ? -1 : 1 )
+  }
+}
 })
+
+function pickAJob(bestJobs) {
+  let picksUpFromLondon = function(job) {
+    londonPostcodes.some(code => job.pick.substr(0, 2).include(code))
+  }
+  bestJobs.map(function(job) {  
+    if (
+      ( job[0] && !picksUpFromLondon(job[0])) ||     
+      ( job[0].d > 60 && job[0].d >= 1.3*job[1].d && picksUpFromLondon(job[0]))
+      ) { return job[0]}
+    else if ( job[0].d < 1.3*job[1] && picksUpFromLondon(job[0]) && !picksUpFromLondon(job[1])) { 
+      return job[1] 
+    }
+  }) 
+  // element.all(by.cssContainingText('.table__tbody', 'SS3')).filter(function(elem) {
+  //   return elem.getText().then(function(text){
+  //     return text === 'Allocate'
+  //   })
+  // }).first().click()
+  // .mouseMove({x: 500, y: 0}).
+  
+    // tabelki.getText().then(function(result) {
+    //   return new Promise ((resolve) => {
+    //   let job = result.find(tab => tab.includes('SE25' && 'CR9'))
+    //   console.log(job);
+    //   resolve(job)
+    //   }).then(job => 
+    // })
+  
+    // let job
+  
+    // tabelki.map(function(el){
+    //   if (el.getText().then(res =>.includes('SE25' && 'CR9')) {
+    //     job = el
+    //   }
+    // })
+    // console.log(job);
+    // job.element(by.css('[type = "button"]')).click()
+}
